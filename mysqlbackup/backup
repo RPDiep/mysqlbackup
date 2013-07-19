@@ -7,7 +7,7 @@ hour=$(date -d "@${unixtimestamp}" '+%R')
 
 removedir() {     
     echo "Removing $1 ..."
-    # [[ -d "$1" ]] && rm -r $1
+    [[ -d "$1" ]] && rm -r $1
 }
 
 [[ ! -d ${backupdir}/${day}/${hour} ]] && mkdir -p ${backupdir}/${day}/${hour}/dumps
@@ -35,35 +35,24 @@ echo "Cleanup..."
 
 if [[ "${hour}" == "00:00" ]]
 then
-
     # Delete the folder from 8 days ago, unless it is the 1st, 8th, 15th, 22th or 29th .
-    date=$(date -d "@$[ unixtimestamp - 8 * 86400 ]" '+%F')
-    dayofthemonth=$(date -d "${date}" '+%d')
-
-    if [[ ! "${dateofthemonth}" =~ (01|08|15|22|29)$ ]]
+    if [[ ! "$(date -d "${date}" '+%d')" =~ (01|08|15|22|29)$ ]]
     then
-        removedir ${backupdir}/${date}
+        removedir ${backupdir}/$(date -d "@$[ unixtimestamp - 8 * 86400 ]" '+%F')
     fi
-
 else
-
     # Delete the folder from 96 hours ago
-    date=$(date -d "@$[ unixtimestamp - 4 * 86400 ]" '+%F')
-    removedir ${backupdir}/${date}/${hour} 
-
+    removedir ${backupdir}/$(date -d "@$[ unixtimestamp - 4 * 86400 ]" '+%F')/${hour} 
 fi
 
 # Delete the folder from 48 hours ago, unless it is on each 6th hour .
 if [[ ! "${hour}" =~ (00|06|12|18):00 ]]
 then
-    date=$(date -d "@$[ unixtimestamp - 2 * 86400 ]" '+%F')
-    removedir ${backupdir}/${date}/${hour}
+    removedir ${backupdir}/$(date -d "@$[ unixtimestamp - 2 * 86400 ]" '+%F')/${hour}
 fi
-
 
 # Delete the folder from 24 hours ago, unless it is on each 3rd hour .
 if [[ ! "${hour}" =~ (00|03|06|09|12|15|18|21):00 ]]
 then
-    date=$(date -d "@$[ unixtimestamp - 86400 ]" '+%F')
-    removedir ${backupdir}/${date}/${hour}
+    removedir ${backupdir}/$(date -d "@$[ unixtimestamp - 86400 ]" '+%F')/${hour}
 fi
