@@ -2,9 +2,9 @@
 
 logfile=$(mktemp)
 backupdir=/var/backups/mysql
-day=$(date '+%F')
 unixtimestamp=$(date '+%s')
-hour=$(date '+%R')
+day=$(date -d "${unixtimestamp}" '+%F')
+hour=$(date -d "${unixtimestamp}" '+%R')
 
 [ ! -d ${backupdir}/${day}/${hour} ] && mkdir -p ${backupdir}/${day}/${hour}/dumps
 
@@ -21,23 +21,34 @@ do
 done
 mv ${logfile} ${backupdir}/${day}/${hour}/dumps/mysqldump.log
 
-# cleanup
+
+
+echo "Cleanup..."
 
 # Delete the folder from 8 days ago, unless it is the 1st, 8th, 15th, 22th or 29th .
 
 date=$(date -d "@$[ unixtimestamp - 8 * 86400 ]" '+%F')
 dayofthemonth=$(date -d "${date}" '+%d')
 
-case "${dateofthemonth}" in
-    01|08|15|22|29)
-        for dir in $(ls -d ${backupdir}/${date}/* 2>/dev/null | grep -v '00:00')
-        do
-            rm -r "${dir}"
-        done 
-        ;;
-    *)
-        rm -r ${backupdir}/${date}
-        ;;
-esac
+if [[ "${dateofthemonth}" =~ 01$|08$|15$|22$|29$ ]]
+then
+    for dir in $(ls -d ${backupdir}/${date}/* 2>/dev/null | grep -v '00:00')
+    do
+        echo "Removing ${dir} ..."
+        #rm -r "${dir}"
+    done 
+else
+    echo "Removing ${backupdir}/${date} ..."
+    #rm -r ${backupdir}/${date}
+fi
 
-# Delete the folder from 24 hours ago, unless it is on each 3rd hour . 
+# Delete the folder from 24 hours ago, unless it is on each 3rd hour .
+
+date=$(date -d "@$[ unixtimestamp - 86400 ]" '+%F')
+
+if [[ ! "${hour}" =~ 00|03|06|09|12|15|18|21 ]]
+then
+    echo "Removing ${backupdir}/${date}/${hour} ..."
+    #rm -r ${backupdir}/${date}/${hour}
+fi
+
