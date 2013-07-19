@@ -5,8 +5,8 @@ day=$(date '+%F')
 hour=$(date '+%R')
 
 removedir() {
-    if [[ -d "$1" ]] 
-    then 
+    if [[ -d "$1" ]]
+    then
         echo "Removing $1 ..."
         rm -r $1
     fi
