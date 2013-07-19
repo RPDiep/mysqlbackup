@@ -27,19 +27,22 @@ echo "Cleanup..."
 
 # Delete the folder from 8 days ago, unless it is the 1st, 8th, 15th, 22th or 29th .
 
-date=$(date -d "@$[ unixtimestamp - 8 * 86400 ]" '+%F')
-dayofthemonth=$(date -d "${date}" '+%d')
-
-if [[ "${dateofthemonth}" =~ 01$|08$|15$|22$|29$ ]]
+if [[ "${hour}" == "00:00" ]]
 then
-    for dir in $(ls -d ${backupdir}/${date}/* 2>/dev/null | grep -v '00:00')
-    do
-        echo "Removing ${dir} ..."
-        #rm -r "${dir}"
-    done 
-else
-    echo "Removing ${backupdir}/${date} ..."
-    #rm -r ${backupdir}/${date}
+    date=$(date -d "@$[ unixtimestamp - 8 * 86400 ]" '+%F')
+    dayofthemonth=$(date -d "${date}" '+%d')
+    
+    if [[ "${dateofthemonth}" =~ 01$|08$|15$|22$|29$ ]]
+    then
+        for dir in $(ls -d ${backupdir}/${date}/* 2>/dev/null | grep -v '00:00')
+        do
+            echo "Removing ${dir} ..."
+            #rm -r "${dir}"
+        done 
+    else
+        echo "Removing ${backupdir}/${date} ..."
+        #rm -r ${backupdir}/${date}
+    fi
 fi
 
 # Delete the folder from 24 hours ago, unless it is on each 3rd hour .
