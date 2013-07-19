@@ -1,26 +1,34 @@
 #!/bin/bash
 
-logfile=$(mktemp)
 backupdir=/var/backups/mysql
 unixtimestamp=$(date '+%s')
 day=$(date -d "@${unixtimestamp}" '+%F')
 hour=$(date -d "@${unixtimestamp}" '+%R')
 
-[ ! -d ${backupdir}/${day}/${hour} ] && mkdir -p ${backupdir}/${day}/${hour}/dumps
+removedir() {     
+    echo "Removing $1 ..."
+    # [[ -d "$1" ]] && rm -r $1
+}
 
-if [[ "${hour}" == "00:00" ]]
+[[ ! -d ${backupdir}/${day}/${hour} ]] && mkdir -p ${backupdir}/${day}/${hour}/dumps
+
+#Create a full backup
+if [[ "${hour}" =~ (00|03|06|09|12|15|18|21):00 ]]
 then
+    logfile=$(mktemp)
+    echo "Creating full backup..."
     /usr/bin/innobackupex --no-timestamp --databases "cloud cloud_usage" --slave-info --safe-slave-backup --no-lock ${backupdir}/${day}/${hour}/full >${logfile} 2>&1
     mv ${logfile} ${backupdir}/${day}/${hour}/full/innobackupex.log
 fi
 
+#Create dumps
+logfile=$(mktemp)
 for database in $(mysql -sNe "show databases" | grep -vE 'information_schema|performance_schema')
 do
-    echo "$(date '+%F %T') Dumping database ${database} ..." | tee -a ${logfile}
+    echo "Dumping database ${database} ..." | tee -a ${logfile}
     mysqldump -E ${database} 2>> ${logfile} | gzip > ${backupdir}/${day}/${hour}/dumps/${database}.sql.gz
 done
 mv ${logfile} ${backupdir}/${day}/${hour}/dumps/mysqldump.log
-
 
 
 echo "Cleanup..."
@@ -34,18 +42,14 @@ then
 
     if [[ ! "${dateofthemonth}" =~ (01|08|15|22|29)$ ]]
     then
-        dir=${backupdir}/${date}
-        echo "Removing ${dir} ..."
-        [[ -d "${dir}" ]] && rm -r ${dir}
+        removedir ${backupdir}/${date}
     fi
 
 else
 
     # Delete the folder from 96 hours ago
     date=$(date -d "@$[ unixtimestamp - 4 * 86400 ]" '+%F')
-    dir=${backupdir}/${date}/${hour}
-    echo "Removing ${dir} ..."
-    [[ -d "${dir}" ]] && rm -r ${dir}
+    removedir ${backupdir}/${date}/${hour} 
 
 fi
 
@@ -53,9 +57,7 @@ fi
 if [[ ! "${hour}" =~ (00|06|12|18):00 ]]
 then
     date=$(date -d "@$[ unixtimestamp - 2 * 86400 ]" '+%F')
-    dir=${backupdir}/${date}/${hour}
-    echo "Removing ${dir} ..."
-    [[ -d "${dir}" ]] && rm -r ${dir}
+    removedir ${backupdir}/${date}/${hour}
 fi
 
 
@@ -63,8 +65,5 @@ fi
 if [[ ! "${hour}" =~ (00|03|06|09|12|15|18|21):00 ]]
 then
     date=$(date -d "@$[ unixtimestamp - 86400 ]" '+%F')
-    dir=${backupdir}/${date}/${hour}
-    echo "Removing ${dir} ..."
-    [[ -d "${dir}" ]] && rm -r ${dir}
+    removedir ${backupdir}/${date}/${hour}
 fi
-
