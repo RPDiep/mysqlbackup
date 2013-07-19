@@ -15,7 +15,7 @@ then
 fi
 
 for database in $(mysql -sNe "show databases" | grep -vE 'information_schema|performance_schema')
-do 
+do
     echo "$(date '+%F %T') Dumping database ${database} ..." | tee -a ${logfile}
     mysqldump -E ${database} 2>> ${logfile} | gzip > ${backupdir}/${day}/${hour}/dumps/${database}.sql.gz
 done
@@ -25,33 +25,46 @@ mv ${logfile} ${backupdir}/${day}/${hour}/dumps/mysqldump.log
 
 echo "Cleanup..."
 
-# Delete the folder from 8 days ago, unless it is the 1st, 8th, 15th, 22th or 29th .
-
 if [[ "${hour}" == "00:00" ]]
 then
+
+    # Delete the folder from 8 days ago, unless it is the 1st, 8th, 15th, 22th or 29th .
     date=$(date -d "@$[ unixtimestamp - 8 * 86400 ]" '+%F')
     dayofthemonth=$(date -d "${date}" '+%d')
-    
-    if [[ "${dateofthemonth}" =~ 01$|08$|15$|22$|29$ ]]
+
+    if [[ ! "${dateofthemonth}" =~ 01$|08$|15$|22$|29$ ]]
     then
-        for dir in $(ls -d ${backupdir}/${date}/* 2>/dev/null | grep -v '00:00')
-        do
-            echo "Removing ${dir} ..."
-            #rm -r "${dir}"
-        done 
-    else
-        echo "Removing ${backupdir}/${date} ..."
-        #rm -r ${backupdir}/${date}
+        dir=${backupdir}/${date}
+        echo "Removing ${dir} ..."
+        [[ -d "${dir}" ]] && rm -r ${dir}
     fi
+
+else
+
+    # Delete the folder from 96 hours ago
+    date=$(date -d "@$[ unixtimestamp - 4 * 86400 ]" '+%F')
+    dir=${backupdir}/${date}/${hour}
+    echo "Removing ${dir} ..."
+    [[ -d "${dir}" ]] && rm -r ${dir}
+
 fi
 
-# Delete the folder from 24 hours ago, unless it is on each 3rd hour .
-
-date=$(date -d "@$[ unixtimestamp - 86400 ]" '+%F')
-
-if [[ ! "${hour}" =~ 00|03|06|09|12|15|18|21 ]]
+# Delete the folder from 48 hours ago, unless it is on each 6th hour .
+if [[ ! "${hour}" =~ 00:|06:|12:|18: ]]
 then
-    echo "Removing ${backupdir}/${date}/${hour} ..."
-    #rm -r ${backupdir}/${date}/${hour}
+    date=$(date -d "@$[ unixtimestamp - 2 * 86400 ]" '+%F')
+    dir=${backupdir}/${date}/${hour}
+    echo "Removing ${dir} ..."
+    [[ -d "${dir}" ]] && rm -r ${dir}
+fi
+
+
+# Delete the folder from 24 hours ago, unless it is on each 3rd hour .
+if [[ ! "${hour}" =~ 00:|03:|06:|09:|12:|15:|18:|21: ]]
+then
+    date=$(date -d "@$[ unixtimestamp - 86400 ]" '+%F')
+    dir=${backupdir}/${date}/${hour}
+    echo "Removing ${dir} ..."
+    [[ -d "${dir}" ]] && rm -r ${dir}
 fi
 
