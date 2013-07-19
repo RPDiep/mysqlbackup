@@ -3,8 +3,8 @@
 logfile=$(mktemp)
 backupdir=/var/backups/mysql
 unixtimestamp=$(date '+%s')
-day=$(date -d "${unixtimestamp}" '+%F')
-hour=$(date -d "${unixtimestamp}" '+%R')
+day=$(date -d "@${unixtimestamp}" '+%F')
+hour=$(date -d "@${unixtimestamp}" '+%R')
 
 [ ! -d ${backupdir}/${day}/${hour} ] && mkdir -p ${backupdir}/${day}/${hour}/dumps
 
