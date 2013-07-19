@@ -1,13 +1,15 @@
 #!/bin/bash
 
 backupdir=/var/backups/mysql
-unixtimestamp=$(date '+%s')
-day=$(date -d "@${unixtimestamp}" '+%F')
-hour=$(date -d "@${unixtimestamp}" '+%R')
+day=$(date '+%F')
+hour=$(date '+%R')
 
-removedir() {     
-    echo "Removing $1 ..."
-    [[ -d "$1" ]] && rm -r $1
+removedir() {
+    if [[ -d "$1" ]] 
+    then 
+        echo "Removing $1 ..."
+        rm -r $1
+    fi
 }
 
 [[ ! -d ${backupdir}/${day}/${hour} ]] && mkdir -p ${backupdir}/${day}/${hour}/dumps
@@ -35,24 +37,36 @@ echo "Cleanup..."
 
 if [[ "${hour}" == "00:00" ]]
 then
-    # Delete the folder from 8 days ago, unless it is the 1st, 8th, 15th, 22th or 29th .
-    if [[ ! "$(date -d "${date}" '+%d')" =~ (01|08|15|22|29)$ ]]
+    # Delete the folder from last year if it is the 1st .
+    if [[ "$(date '+%d')" == "01" ]]
     then
-        removedir ${backupdir}/$(date -d "@$[ unixtimestamp - 8 * 86400 ]" '+%F')
+        removedir ${backupdir}/$(date -d "last year" '+%F')
+    fi
+
+    # Delete the folder from last month if it is the 8th, 15th, 22th or 29th .
+    if [[ "$(date '+%d')" =~ (08|15|22|29)$ ]]
+    then
+        removedir ${backupdir}/$(date -d "last month" '+%F')
+    fi
+
+    # Delete the folder from 8 days ago, unless it is the 1st, 8th, 15th, 22th or 29th .
+    if [[ ! "$(date '+%d')" =~ (01|08|15|22|29)$ ]]
+    then
+        removedir ${backupdir}/$(date -d "8 days ago" '+%F')
     fi
 else
     # Delete the folder from 96 hours ago
-    removedir ${backupdir}/$(date -d "@$[ unixtimestamp - 4 * 86400 ]" '+%F')/${hour} 
+    removedir ${backupdir}/$(date -d "4 days ago" '+%F')/${hour}
 fi
 
 # Delete the folder from 48 hours ago, unless it is on each 6th hour .
 if [[ "${hour}" =~ (03|09|15|21):00 ]]
 then
-    removedir ${backupdir}/$(date -d "@$[ unixtimestamp - 2 * 86400 ]" '+%F')/${hour}
+    removedir ${backupdir}/$(date -d "2 days ago" '+%F')/${hour}
 fi
 
 # Delete the folder from 24 hours ago, unless it is on each 3rd hour .
 if [[ ! "${hour}" =~ (00|03|06|09|12|15|18|21):00 ]]
 then
-    removedir ${backupdir}/$(date -d "@$[ unixtimestamp - 86400 ]" '+%F')/${hour}
+    removedir ${backupdir}/$(date -d "yesterday" '+%F')/${hour}
 fi
