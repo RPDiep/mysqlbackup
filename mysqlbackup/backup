@@ -20,7 +20,9 @@ then
     logfile=$(mktemp)
     echo "Creating full backup..."
     /usr/bin/innobackupex --no-timestamp --databases "cloud cloud_usage" --slave-info --safe-slave-backup --no-lock ${backupdir}/${day}/${hour}/full >${logfile} 2>&1
+    /usr/bin/innobackupex --apply-log ${backupdir}/${day}/${hour}/full >> ${logfile} 2>&1
     mv ${logfile} ${backupdir}/${day}/${hour}/full/innobackupex.log
+    
 fi
 
 #Create dumps
